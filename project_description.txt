@@ -1,0 +1,62 @@
+**Project Title:** *Measuring the Incremental Impact of Marketing Campaigns with Causal Inference*
+
+**Goal:**
+Build an end-to-end data science project that uses **causal inference** methods to measure the true business impact of a marketing campaign. The project should demonstrate technical depth (classical + ML-based causal methods), strong business framing, and clean software engineering practices.
+
+**Dataset:**
+
+* Use the **Criteo Uplift Prediction Dataset** (publicly available).
+* It contains randomized control vs treatment groups, user features, and conversion outcomes → perfect for uplift/causal analysis.
+
+**Business Problem:**
+Companies spend millions on marketing. A simple correlation may show a sales increase after ads, but the real question is: *“How much of that increase was actually caused by the campaign?”*
+The goal is to estimate the **causal effect** (incremental conversions/revenue), identify which customer segments respond positively, and simulate how ROI could improve with smarter targeting.
+
+**Methods to Implement:**
+
+1. **Exploratory Data Analysis (EDA):**
+
+   * Compare treatment vs control groups.
+   * Visualize biases, distributions, outcome differences.
+
+2. **Classical Causal Inference:**
+
+   * Propensity score matching or weighting.
+   * Average Treatment Effect (ATE) estimation.
+   * (Optional) Difference-in-Differences if you create a temporal version.
+
+3. **Causal Machine Learning:**
+
+   * Uplift modeling (T-Learner, X-Learner, Two-Model).
+   * Causal forests (using libraries like `EconML` or `CausalML`).
+
+4. **Evaluation:**
+
+   * Compare uplift models vs naïve approaches.
+   * Use metrics like Qini curves, uplift curves.
+
+5. **Business Interpretation:**
+
+   * Translate results into ROI: *“Targeting high-uplift segments would increase campaign efficiency by X%.”*
+   * Show practical recommendations for marketers.
+
+**Deliverables:**
+
+* **Code:** Modular, reproducible scripts (notebooks + `src/` folder).
+* **Documentation:** A polished `README.md` explaining business framing, dataset, methods, and results.
+* **Visualization:** Plots showing uplift curves, treatment effects across segments.
+* **Optional Deployment:** Simple dashboard (Plotly Dash or Streamlit) that lets a user explore treatment effects across demographics.
+
+**Tech Stack:**
+
+* Python 3.10+
+* Libraries: `pandas`, `scikit-learn`, `matplotlib/seaborn/plotly`, `EconML` or `CausalML`
+* Repo structured for clarity:
+
+  ```
+  ├── data/
+  ├── notebooks/
+  ├── src/
+  ├── reports/
+  └── README.md
+  ```

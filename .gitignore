@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.dylib
+
+# Environments
+.venv/
+venv/
+ENV/
+env/
+.env
+.python-version
+
+# Packaging / build
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Testing / coverage / type-checking
+.pytest_cache/
+.mypy_cache/
+.pytype/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Data artifacts (large files not for version control)
+data/**/*.csv
+data/**/*.csv.gz
+data/**/*.tsv
+data/**/*.parquet
+data/**/*.feather
+data/**/*.jsonl
+data/**/*.zip
+data/**/*.xz
+data/**/*.zst
+
+# Reports/outputs (optional)
+reports/**/*.html
+reports/**/*.pdf
+reports/**/*.png
+reports/**/*.svg
