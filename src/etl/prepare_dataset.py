@@ -14,6 +14,24 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import requests
 from tqdm import tqdm
+from urllib.parse import urljoin
+
+CRITEO_PAGE_URL = "https://ailab.criteo.com/criteo-uplift-prediction-dataset/"
+
+
+def resolve_download_url(url: str) -> str:
+	"""Return a direct .csv.gz URL. If `url` is a page, try to find a .csv.gz link."""
+	if not url:
+		raise ValueError("Empty URL provided")
+	if url.lower().endswith(".gz"):
+		return url
+	# Fetch page and search for a .csv.gz link
+	r = requests.get(url, timeout=30)
+	r.raise_for_status()
+	matches = re.findall(r"href=[\'\"]([^\'\"]+\.csv\.gz)[\'\"]", r.text, flags=re.IGNORECASE)
+	if not matches:
+		raise ValueError("Could not find a .csv.gz link on the provided page: " + url)
+	return urljoin(url, matches[0])
 
 
 def download_file(url: str, dest_path: str, timeout: int = 30) -> None:
@@ -46,9 +64,11 @@ def ensure_csv(csv_path: str, gz_path: Optional[str], download_url: Optional[str
 		return csv_path
 
 	# Determine gz path if not provided
+	resolved_url: Optional[str] = None
 	if not gz_path:
 		if download_url and download_url.strip():
-			filename = os.path.basename(download_url)
+			resolved_url = resolve_download_url(download_url.strip())
+			filename = os.path.basename(resolved_url)
 			if not filename:
 				filename = os.path.basename(csv_path) + ".gz"
 			gz_path = os.path.join(os.path.dirname(csv_path), filename)
@@ -61,8 +81,10 @@ def ensure_csv(csv_path: str, gz_path: Optional[str], download_url: Optional[str
 		return csv_path
 
 	if download_url:
-		print(f"Downloading .gz from {download_url} -> {gz_path}")
-		download_file(download_url, gz_path)
+		if not resolved_url:
+			resolved_url = resolve_download_url(download_url.strip())
+		print(f"Downloading .gz from {resolved_url} -> {gz_path}")
+		download_file(resolved_url, gz_path)
 		print(f"Extracting: {gz_path} -> {csv_path}")
 		extract_gz(gz_path, csv_path)
 		return csv_path
@@ -72,6 +94,7 @@ def ensure_csv(csv_path: str, gz_path: Optional[str], download_url: Optional[str
 	)
 
 	
+
 def infer_and_optimize_dtypes(chunk: pd.DataFrame) -> pd.DataFrame:
 	"""Best-effort dtype optimization for a chunk.
 
@@ -151,7 +174,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
 	parser.add_argument("parquet", help="Path to output Parquet file")
 	parser.add_argument("--chunksize", type=int, default=1_000_000, help="Rows per chunk (default: 1,000,000)")
 	parser.add_argument("--overwrite", action="store_true", help="Overwrite existing Parquet file")
-	parser.add_argument("--download-url", dest="download_url", default=None, help="URL to .csv.gz on Criteo site")
+	parser.add_argument("--download-url", dest="download_url", default=CRITEO_PAGE_URL, help="URL to .csv.gz or a page containing it (default: Criteo dataset page)")
 	parser.add_argument("--gz-path", dest="gz_path", default=None, help="Path to save/read the .gz (defaults near CSV)")
 	return parser.parse_args(argv)
 

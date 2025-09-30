@@ -15,10 +15,17 @@ Data source: [Criteo Uplift Prediction Dataset](https://ailab.criteo.com/criteo-
 Use the standalone script to download the `.csv.gz` (if not present), extract to CSV, and convert to Parquet.
 
 ```bash
+# Default: uses the Criteo dataset page to auto-resolve the .csv.gz
 python src/etl/prepare_dataset.py \
   data/criteo-uplift-v2.1.csv \
   data/criteo-uplift-v2.1.parquet \
-  --download-url "<PUT_THE_CSV_GZ_DOWNLOAD_URL_HERE>" \
+  --chunksize 1000000
+
+# Or specify a direct .csv.gz URL explicitly
+python src/etl/prepare_dataset.py \
+  data/criteo-uplift-v2.1.csv \
+  data/criteo-uplift-v2.1.parquet \
+  --download-url "https://example.com/criteo-uplift-v2.1.csv.gz" \
   --chunksize 1000000
 ```
 
