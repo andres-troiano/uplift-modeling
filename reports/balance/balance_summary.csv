@@ -1,0 +1,13 @@
+feature,ks_stat,p_value,imbalance_level
+f6,0.0498,0.0,Moderate
+f8,0.04,0.0,Moderate
+f3,0.0312,0.0,Moderate
+f9,0.0258,0.0,Moderate
+f2,0.0192,0.0,Moderate
+f0,0.0188,0.0,Moderate
+f7,0.0117,0.0021,Moderate
+f5,0.0117,0.0022,Moderate
+f10,0.0068,0.197,Negligible
+f4,0.0067,0.2052,Negligible
+f1,0.004,0.8171,Negligible
+f11,0.002,1.0,Negligible

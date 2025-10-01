@@ -53,6 +53,8 @@ def plot_feature_distributions(
             axes[i, 0].set_title(f"{c} distribution")
             sns.boxplot(x=df_sample[c], ax=axes[i, 1], color=PALETTE.get("control", "orange"))
             axes[i, 1].set_title(f"{c} boxplot")
+            axes[i, 0].grid(True, alpha=0.3)
+            axes[i, 1].grid(True, alpha=0.3)
         plt.tight_layout()
         if save_dir is not None:
             os.makedirs(save_dir, exist_ok=True)
@@ -72,6 +74,7 @@ def plot_feature_distributions(
             sns.barplot(x=vc.values, y=vc.index, color=PALETTE.get("treatment", "steelblue"))
             plt.title(f"Top categories for {c}")
             plt.tight_layout()
+            plt.grid(True, axis="x", alpha=0.3)
             fig = plt.gcf()
             if save_dir is not None:
                 os.makedirs(save_dir, exist_ok=True)
@@ -113,6 +116,7 @@ def plot_balance_distributions(
         sns.histplot(df.loc[df[tr_col] == 0, f], bins=bins, color=PALETTE.get("control", "orange"), label="Control", stat="density", alpha=0.6)
         plt.title(f"Distribution of {f} by treatment status\n(KS={balance_df.loc[f,'ks_stat']:.3f})")
         plt.legend()
+        plt.grid(True, alpha=0.3)
         plt.tight_layout()
         fig = plt.gcf()
         if save_dir is not None:
@@ -160,6 +164,7 @@ def plot_balance_cdfs(
         plt.xlabel(f)
         plt.ylabel("Cumulative probability")
         plt.legend()
+        plt.grid(True, alpha=0.3)
         plt.tight_layout()
         fig = plt.gcf()
         if save_dir is not None:
@@ -201,6 +206,7 @@ def plot_cdfs_by_group(
     plt.xlabel(feature)
     plt.ylabel("Cumulative probability")
     plt.legend()
+    plt.grid(True, alpha=0.3)
     plt.tight_layout()
     fig = plt.gcf()
     if save_dir is not None:

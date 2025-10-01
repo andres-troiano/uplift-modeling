@@ -70,8 +70,17 @@ def run_balance(df):
     os.makedirs(out_dir, exist_ok=True)
     balance_results_path = os.path.join(out_dir, "balance_results.csv")
     balance_summary_path = os.path.join(out_dir, "balance_summary.csv")
-    balance_df.to_csv(balance_results_path)
-    summary.to_csv(balance_summary_path)
+    # Round numeric results to 4 decimals for readability
+    balance_df_rounded = balance_df.copy()
+    for col in balance_df_rounded.columns:
+        if pd.api.types.is_numeric_dtype(balance_df_rounded[col]):
+            balance_df_rounded[col] = balance_df_rounded[col].round(4)
+    summary_rounded = summary.copy()
+    for col in summary_rounded.columns:
+        if pd.api.types.is_numeric_dtype(summary_rounded[col]):
+            summary_rounded[col] = summary_rounded[col].round(4)
+    balance_df_rounded.to_csv(balance_results_path)
+    summary_rounded.to_csv(balance_summary_path)
     logger.info("📄 Saved balance results to %s and summary to %s", balance_results_path, balance_summary_path)
     # Plots: save under reports/plots
     plots_root = os.path.join("reports", "plots")
@@ -129,7 +138,8 @@ def main(step: str):
 
     logger.info("📂 Loading data...")
     df = pd.read_parquet(RAW_PARQUET)
-    logger.info("✅ Loaded %,d rows and %d columns.", len(df), len(df.columns))
+    logger.info("✅ Loaded %s rows and %s columns.", f"{len(df):,}", len(df.columns))
+
 
     if step == "balance":
         run_balance(df)
