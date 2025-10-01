@@ -34,32 +34,71 @@ def diff_in_means(y: pd.Series, w: pd.Series) -> Tuple[float, float, float, floa
 	return float(p_treat), float(p_ctrl), float(uplift), float(ci_low), float(ci_high)
 
 
-def logistic_adjusted_ate(
-	df: pd.DataFrame,
-	y_col: str,
-	w_col: str,
-	x_cols: List[str],
-	max_iter: int = 200,
-	C: float = 1.0,
-	n_jobs: int = -1,
-) -> Tuple[float, float, float]:
-	"""Compute adjusted ATE via logistic regression with treatment + covariates.
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+from typing import List, Dict, Any
 
-	Model: logit(y) ~ w + X
-	Returns (coef_w, ate_log_odds, ate_prob_diff_approx)
-	"""
-	y = df[y_col].astype(int).values
-	w = df[w_col].astype(int).values
-	X = df[x_cols].values
-	X_model = np.column_stack([w, X])
-	model = LogisticRegression(max_iter=max_iter, C=C, n_jobs=n_jobs)
-	model.fit(X_model, y)
-	coef_w = float(model.coef_[0][0])
-	# Approximate prob-diff using average derivative of logistic at baseline
-	p_hat = model.predict_proba(X_model)[:, 1]
-	avg_var = float(np.mean(p_hat * (1 - p_hat)))
-	ate_prob_diff = float(coef_w * avg_var)
-	return coef_w, coef_w, ate_prob_diff
+
+def logistic_adjusted_ate(
+    df: pd.DataFrame,
+    y_col: str,
+    w_col: str,
+    x_cols: List[str],
+) -> Dict[str, Any]:
+    """
+    Compute adjusted ATE via logistic regression with treatment + covariates.
+
+    Model: logit(y) ~ w + X
+
+    Returns dict with:
+        - coef_w: treatment coefficient (log-odds scale)
+        - odds_ratio: exp(coef_w)
+        - ate_prob_diff: approx probability difference
+        - se: standard error of coef_w
+        - ci_low, ci_high: 95% CI for coef_w
+        - n_treat, n_control: sample sizes
+    """
+
+    # Prepare data
+    y = df[y_col].astype(int).values
+    w = df[w_col].astype(int).values
+    X = df[x_cols].values
+
+    # Add constant and treatment as first column
+    X_model = sm.add_constant(np.column_stack([w, X]))
+
+    # Fit logistic regression
+    model = sm.Logit(y, X_model)
+    result = model.fit(disp=False)
+
+    # Extract treatment coefficient (col=1 after constant)
+    coef_w = float(result.params[1])
+    se_w = float(result.bse[1])
+    ci_low, ci_high = result.conf_int().loc[1]
+
+    # Odds ratio
+    odds_ratio = float(np.exp(coef_w))
+
+    # Approximate probability difference using average derivative trick
+    p_hat = result.predict(X_model)
+    avg_var = float(np.mean(p_hat * (1 - p_hat)))
+    ate_prob_diff = float(coef_w * avg_var)
+
+    # Sample sizes
+    n_treat = int(w.sum())
+    n_control = int(len(w) - n_treat)
+
+    return {
+        "coef_w": coef_w,
+        "odds_ratio": odds_ratio,
+        "ate_prob_diff": ate_prob_diff,
+        "se": se_w,
+        "ci_low": float(ci_low),
+        "ci_high": float(ci_high),
+        "n_treat": n_treat,
+        "n_control": n_control,
+    }
 
 
 def cuped_adjustment(

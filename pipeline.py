@@ -104,14 +104,19 @@ def run_baseline(df):
         uplift, p_treat, p_ctrl, ci_low, ci_high,
     )
 
-    coef_w, ate_log_odds, ate_prob_diff = logistic_adjusted_ate(
-        df, y_col=OUTCOME, w_col=TREATMENT, x_cols=FEATURES
-    )
+    logit_res = logistic_adjusted_ate(df, y_col=OUTCOME, w_col=TREATMENT, x_cols=FEATURES)
     logger.info(
-        "Adjusted ATE (logit): coef_w=%.4f, prob-diff≈%.5f",
-        coef_w, ate_prob_diff,
+        "Adjusted ATE (logit): coef_w=%.4f (se=%.4f, 95%% CI=[%.4f, %.4f]), OR=%.3f, prob-diff≈%.5f, n_treat=%d, n_control=%d",
+        logit_res["coef_w"],
+        logit_res["se"],
+        logit_res["ci_low"],
+        logit_res["ci_high"],
+        logit_res["odds_ratio"],
+        logit_res["ate_prob_diff"],
+        logit_res["n_treat"],
+        logit_res["n_control"],
     )
-    return ate_prob_diff
+    return logit_res["ate_prob_diff"]
 
 
 def run_propensity(df):
