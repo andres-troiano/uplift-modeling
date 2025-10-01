@@ -1,0 +1,15 @@
+// Criteo Uplift DAG
+digraph {
+	F [label="User features (f0..f11)"]
+	T [label="Treatment assignment"]
+	E [label="Exposure (saw ad)"]
+	V [label=Visit]
+	Y [label=Conversion]
+	T -> E
+	E -> V
+	V -> Y
+	F -> T
+	F -> E
+	F -> V
+	F -> Y
+}
