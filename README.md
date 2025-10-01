@@ -34,6 +34,11 @@ Notes:
 - If you already have the CSV, it will skip download/extract and go straight to conversion.
 - Use `--gz-path` to control where the `.gz` is saved/read.
 - Use `--overwrite` to rebuild Parquet if it exists.
+ - Deduplication:
+   - `--drop-duplicates-in-chunks` removes duplicates within each CSV chunk before writing.
+   - `--final-dedupe` loads the written Parquet and drops duplicates globally (slower, more thorough).
+   - `--dedupe-subset col1,col2` to define duplicates by subset of columns (default: all columns).
+   - `--deduped-parquet path.parquet` to write the deduped output to a separate file.
 
 ## Notebooks
 Open the EDA notebook after conversion:

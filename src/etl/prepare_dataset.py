@@ -131,7 +131,14 @@ def infer_and_optimize_dtypes(chunk: pd.DataFrame) -> pd.DataFrame:
 	return chunk
 
 
-def convert_csv_to_parquet(csv_path: str, parquet_path: str, chunksize: int = 1_000_000, overwrite: bool = False) -> None:
+def convert_csv_to_parquet(
+	csv_path: str,
+	parquet_path: str,
+	chunksize: int = 1_000_000,
+	overwrite: bool = False,
+	drop_dupes_in_chunks: bool = False,
+	dedupe_subset: Optional[List[str]] = None,
+) -> None:
 	if not os.path.exists(csv_path):
 		raise FileNotFoundError(f"CSV not found: {csv_path}")
 
@@ -154,6 +161,12 @@ def convert_csv_to_parquet(csv_path: str, parquet_path: str, chunksize: int = 1_
 
 	for i, chunk in enumerate(csv_iter):
 		chunk = infer_and_optimize_dtypes(chunk)
+		if drop_dupes_in_chunks:
+			before = len(chunk)
+			chunk = chunk.drop_duplicates(subset=dedupe_subset).reset_index(drop=True)
+			removed = before - len(chunk)
+			if removed:
+				print(f"  chunk {i+1:,}: removed {removed:,} duplicate rows (subset={dedupe_subset or 'all'})")
 		table = pa.Table.from_pandas(chunk, preserve_index=False)
 		if writer is None:
 			writer = pq.ParquetWriter(parquet_path, table.schema, compression="snappy")
@@ -165,7 +178,24 @@ def convert_csv_to_parquet(csv_path: str, parquet_path: str, chunksize: int = 1_
 
 	if writer is not None:
 		writer.close()
-		print(f"Done. Total rows written: {total_rows:,}")
+	print(f"Done. Total rows written: {total_rows:,}")
+
+
+def final_dedupe_parquet(src_parquet: str, out_parquet: Optional[str], dedupe_subset: Optional[List[str]]) -> None:
+	if out_parquet is None:
+		out_parquet = src_parquet
+	print("Loading Parquet for global dedupe (this may take a few minutes)...")
+	df = pd.read_parquet(src_parquet)
+	before = len(df)
+	df = df.drop_duplicates(subset=dedupe_subset).reset_index(drop=True)
+	removed = before - len(df)
+	print({
+		"global_duplicates_removed": int(removed),
+		"rows_before": int(before),
+		"rows_after": int(len(df))
+	})
+	df.to_parquet(out_parquet, engine="pyarrow", compression="snappy")
+	print(f"Wrote deduplicated Parquet: {out_parquet}")
 
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
@@ -176,13 +206,30 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
 	parser.add_argument("--overwrite", action="store_true", help="Overwrite existing Parquet file")
 	parser.add_argument("--download-url", dest="download_url", default=CRITEO_PAGE_URL, help="URL to .csv.gz or a page containing it (default: Criteo dataset page)")
 	parser.add_argument("--gz-path", dest="gz_path", default=None, help="Path to save/read the .gz (defaults near CSV)")
+	# Deduplication options
+	parser.add_argument("--drop-duplicates-in-chunks", dest="drop_dupes_in_chunks", action="store_true", help="Drop duplicate rows within each CSV chunk prior to writing")
+	parser.add_argument("--final-dedupe", dest="final_dedupe", action="store_true", help="After writing Parquet, load it, drop duplicates globally, and write back")
+	parser.add_argument("--dedupe-subset", dest="dedupe_subset", default=None, help="Comma-separated column names to define duplicates (default: all columns)")
+	parser.add_argument("--deduped-parquet", dest="deduped_parquet", default=None, help="Optional output path for the deduplicated Parquet (default: overwrite the main parquet)")
 	return parser.parse_args(argv)
 
 
 def main(argv: Optional[List[str]] = None) -> None:
 	args = parse_args(argv)
 	csv_path = ensure_csv(args.csv, args.gz_path, args.download_url)
-	convert_csv_to_parquet(csv_path, args.parquet, chunksize=args.chunksize, overwrite=args.overwrite)
+	dedupe_subset: Optional[List[str]] = None
+	if args.dedupe_subset:
+		dedupe_subset = [c.strip() for c in args.dedupe_subset.split(",") if c.strip()]
+	convert_csv_to_parquet(
+		csv_path,
+		args.parquet,
+		chunksize=args.chunksize,
+		overwrite=args.overwrite,
+		drop_dupes_in_chunks=args.drop_dupes_in_chunks,
+		dedupe_subset=dedupe_subset,
+	)
+	if args.final_dedupe:
+		final_dedupe_parquet(args.parquet, args.deduped_parquet, dedupe_subset)
 
 
 if __name__ == "__main__":
