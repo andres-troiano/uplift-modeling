@@ -6,3 +6,4 @@ seaborn==0.13
 requests==2.31
 tqdm==4.66
 ipykernel==6.29
+scipy==1.15.3
