@@ -48,13 +48,45 @@ jupyter lab
 ```
 Then open `notebooks/01_eda_uplift.ipynb`. It expects Parquet at `data/criteo-uplift-v2.1.parquet`.
 
+## Pipeline
+
+Run steps via `pipeline.py`:
+
+```bash
+# Prepare data (download/extract/convert)
+python pipeline.py --step prepare
+
+# Balance diagnostics (KS tests, summaries, plots)
+python pipeline.py --step balance --log-level INFO
+
+# Full run (no interactive plots; images saved under reports/plots/)
+python pipeline.py --step all --log-level INFO
+```
+
+Artifacts:
+- CSVs: `reports/balance/balance_results.csv`, `reports/balance/balance_summary.csv`
+- Plots: `reports/plots/features/*.png`, `reports/plots/balance/*.png`
+
 ## Project Structure
 ```
 ├── data/
 ├── notebooks/
+├── reports/
+│   ├── balance/
+│   │   ├── balance_results.csv
+│   │   └── balance_summary.csv
+│   └── plots/
+│       ├── features/
+│       └── balance/
 ├── src/
+│   ├── eda/
+│   │   ├── balance.py
+│   │   └── visualize.py
+│   ├── estimation/
+│   │   └── baseline.py
 │   └── etl/
 │       └── prepare_dataset.py
+├── pipeline.py
 ├── requirements.txt
 └── README.md
 ```

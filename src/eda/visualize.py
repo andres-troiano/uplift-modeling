@@ -24,6 +24,7 @@ def plot_feature_distributions(
     random_state: int = 42,
     return_handles: bool = False,
     save_dir: Optional[str] = None,
+    show: bool = True,
 ) -> Optional[Dict[str, Any]]:
     """Plot histograms/boxplots for top-K numeric and bar charts for top-K categorical.
 
@@ -55,9 +56,11 @@ def plot_feature_distributions(
         plt.tight_layout()
         if save_dir is not None:
             os.makedirs(save_dir, exist_ok=True)
-            out_path = os.path.join(save_dir, "feature_distributions_numeric.png")
+            out_path = os.path.join(save_dir, "numeric_distributions.png")
             fig.savefig(out_path, bbox_inches="tight")
-        plt.show()
+        if show:
+            plt.show()
+        plt.close(fig)
         if return_handles:
             handles["numeric"] = (fig, axes)
 
@@ -72,9 +75,11 @@ def plot_feature_distributions(
             fig = plt.gcf()
             if save_dir is not None:
                 os.makedirs(save_dir, exist_ok=True)
-                out_path = os.path.join(save_dir, f"feature_top_categories_{c}.png")
+                out_path = os.path.join(save_dir, f"categorical_top_{c}.png")
                 fig.savefig(out_path, bbox_inches="tight")
-            plt.show()
+            if show:
+                plt.show()
+            plt.close(fig)
             if return_handles:
                 handles["categorical"].append(fig)
 
@@ -92,6 +97,7 @@ def plot_balance_distributions(
     random_state: int = 42,
     return_handles: bool = False,
     save_dir: Optional[str] = None,
+    show: bool = True,
 ) -> Optional[List[plt.Figure]]:
     """Plot histograms for the top-K most imbalanced features (by KS)."""
     if sample_size is not None and len(df) > sample_size:
@@ -111,9 +117,11 @@ def plot_balance_distributions(
         fig = plt.gcf()
         if save_dir is not None:
             os.makedirs(save_dir, exist_ok=True)
-            out_path = os.path.join(save_dir, f"balance_dist_{f}.png")
+            out_path = os.path.join(save_dir, f"distribution_{f}.png")
             fig.savefig(out_path, bbox_inches="tight")
-        plt.show()
+        if show:
+            plt.show()
+        plt.close(fig)
         if return_handles:
             figs.append(fig)
 
@@ -130,6 +138,7 @@ def plot_balance_cdfs(
     random_state: int = 42,
     return_handles: bool = False,
     save_dir: Optional[str] = None,
+    show: bool = True,
 ) -> Optional[List[plt.Figure]]:
     """Plot CDFs for the top-K most imbalanced features (by KS)."""
     if sample_size is not None and len(df) > sample_size:
@@ -155,9 +164,11 @@ def plot_balance_cdfs(
         fig = plt.gcf()
         if save_dir is not None:
             os.makedirs(save_dir, exist_ok=True)
-            out_path = os.path.join(save_dir, f"balance_cdf_{f}.png")
+            out_path = os.path.join(save_dir, f"cdf_{f}.png")
             fig.savefig(out_path, bbox_inches="tight")
-        plt.show()
+        if show:
+            plt.show()
+        plt.close(fig)
         if return_handles:
             figs.append(fig)
 
@@ -173,6 +184,7 @@ def plot_cdfs_by_group(
     random_state: int = 42,
     return_handles: bool = False,
     save_dir: Optional[str] = None,
+    show: bool = True,
 ) -> Optional[plt.Figure]:
     """Plot CDFs of a feature for each group value in group_col (e.g., treatment vs control)."""
     if sample_size is not None and len(df) > sample_size:
@@ -195,7 +207,9 @@ def plot_cdfs_by_group(
         os.makedirs(save_dir, exist_ok=True)
         out_path = os.path.join(save_dir, f"cdf_{feature}.png")
         fig.savefig(out_path, bbox_inches="tight")
-    plt.show()
+    if show:
+        plt.show()
+    plt.close(fig)
     return fig if return_handles else None
 
 
@@ -204,6 +218,7 @@ def plot_correlation_heatmap(
     columns: List[str],
     return_handles: bool = False,
     save_dir: Optional[str] = None,
+    show: bool = True,
 ) -> Tuple[Optional[plt.Figure], pd.DataFrame]:
     """Plot a correlation heatmap and return the figure (optional) and numeric matrix."""
     corr = df[columns].corr()
@@ -215,5 +230,7 @@ def plot_correlation_heatmap(
         os.makedirs(save_dir, exist_ok=True)
         out_path = os.path.join(save_dir, "correlation_heatmap.png")
         fig.savefig(out_path, bbox_inches="tight")
-    plt.show()
+    if show:
+        plt.show()
+    plt.close(fig)
     return (fig if return_handles else None, corr) 

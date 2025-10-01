@@ -73,8 +73,16 @@ def run_balance(df):
     balance_df.to_csv(balance_results_path)
     summary.to_csv(balance_summary_path)
     logger.info("📄 Saved balance results to %s and summary to %s", balance_results_path, balance_summary_path)
-    plot_feature_distributions(df, sample_size=200_000)
-    plot_balance_distributions(df, tr_col=TREATMENT, balance_df=balance_df, features=FEATURES)
+    # Plots: save under reports/plots
+    plots_root = os.path.join("reports", "plots")
+    features_plots_dir = os.path.join(plots_root, "features")
+    balance_plots_dir = os.path.join(plots_root, "balance")
+    os.makedirs(features_plots_dir, exist_ok=True)
+    os.makedirs(balance_plots_dir, exist_ok=True)
+    plot_feature_distributions(df, sample_size=200_000, save_dir=features_plots_dir, show=False)
+    logger.info("📊 Saved feature plots under %s", features_plots_dir)
+    plot_balance_distributions(df, tr_col=TREATMENT, balance_df=balance_df, features=FEATURES, save_dir=balance_plots_dir, show=False)
+    logger.info("📊 Saved balance plots under %s", balance_plots_dir)
     return balance_df, summary
 
 
