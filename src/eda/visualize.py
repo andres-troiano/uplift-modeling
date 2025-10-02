@@ -239,4 +239,4 @@ def plot_correlation_heatmap(
     if show:
         plt.show()
     plt.close(fig)
-    return (fig if return_handles else None, corr) 
+    return (fig if return_handles else None, corr)

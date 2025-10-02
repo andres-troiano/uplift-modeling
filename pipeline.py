@@ -32,6 +32,8 @@ from src.eda.visualize import (
 # Baseline causal estimation
 from src.estimation.baseline import diff_in_means, logistic_adjusted_ate
 from src.estimation.heterogeneity import run_cate_by_feature_bins
+from src.estimation.propensity import run_propensity_methods
+from src.estimation.uplift import run_uplift_models
 logger = logging.getLogger(__name__)
 # Propensity & Uplift (placeholders for now)
 # from src.estimation.propensity import run_ipw, run_matching
@@ -122,16 +124,23 @@ def run_baseline(df):
 
 
 def run_propensity(df):
-    """Placeholder for propensity score analysis."""
-    logger.info("⚖️ Running propensity score analysis... (to be implemented)")
-    # run_ipw(df, TREATMENT, OUTCOME, FEATURES)
-    # run_matching(df, TREATMENT, OUTCOME, FEATURES)
+    """Run propensity score methods (IPW and Matching)."""
+    logger.info("⚖️ Running propensity score methods...")
+    out_dir = os.path.join("reports", "propensity")
+    os.makedirs(out_dir, exist_ok=True)
+    results_df = run_propensity_methods(df, t_col=TREATMENT, y_col=OUTCOME, x_cols=FEATURES, reports_dir=out_dir)
+    logger.info("📄 Propensity results saved with %d methods.", len(results_df))
 
 
 def run_uplift(df):
-    """Placeholder for uplift modeling."""
-    logger.info("🌲 Running uplift models... (to be implemented)")
-    # run_uplift_models(df, TREATMENT, OUTCOME, FEATURES)
+    """Run uplift models (T-Learner, X-Learner, optional Causal Forest)."""
+    logger.info("🌲 Running uplift models...")
+    out_dir = os.path.join("reports", "uplift")
+    plots_dir = os.path.join("reports", "plots", "uplift")
+    os.makedirs(out_dir, exist_ok=True)
+    os.makedirs(plots_dir, exist_ok=True)
+    results_df = run_uplift_models(df, t_col=TREATMENT, y_col=OUTCOME, x_cols=FEATURES, reports_dir=out_dir, plots_dir=plots_dir, sample_size=None, show=False)
+    logger.info("📄 Uplift results saved with %d methods.", len(results_df))
 
 
 def run_heterogeneity(df):
