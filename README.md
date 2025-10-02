@@ -337,6 +337,9 @@ Each model outputs per-user **uplift scores**. We evaluate models using:
 
 Instead of treating all users equally, **targeting only the top decile by uplift score yields ~177 additional conversions** compared to random targeting. This demonstrates the practical ROI of uplift modeling: the company could allocate budget more efficiently, focusing spend on the most responsive users.
 
+![t learner uplift curve](reports/plots/uplift/t_learner_uplift_curve.png)
+![t learner qini curve](reports/plots/uplift/t_learner_qini_curve.png)
+
 
 
 ## Citation
