@@ -59,9 +59,11 @@ def estimate_propensity_scores(
     clf.fit(X, t)
     e = np.zeros(len(mask), dtype=float)
     e[mask] = clf.predict_proba(X)[:, 1]
-    # For rows with NaNs in X, fall back to marginal probability
+    # For rows with NaNs in X, drop them by setting NaN (handled downstream)
     if (~mask).any():
-        e[~mask] = float(t.mean())
+        dropped = int((~mask).sum())
+        logger.info("Propensity: dropping %d rows with NaNs in features", dropped)
+        e[~mask] = np.nan
     # Trim to avoid division issues
     eps = 1e-3
     e = np.clip(e, eps, 1 - eps)

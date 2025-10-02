@@ -67,12 +67,20 @@ python pipeline.py --step all --sample-size 1000000 --log-level INFO
 
 # Heterogeneity (CATE) only
 python pipeline.py --step heterogeneity --sample-size 1000000 --log-level INFO
+
+# Propensity methods (IPW + Matching)
+python pipeline.py --step propensity --sample-size 1000000 --log-level INFO
+
+# Uplift models (T-/X-learner, optional Causal Forest)
+python pipeline.py --step uplift --sample-size 1000000 --log-level INFO
 ```
 
 Artifacts:
 - CSVs: `reports/balance/balance_results.csv`, `reports/balance/balance_summary.csv`
 - CATE CSV: `reports/heterogeneity/cate_results.csv`
-- Plots: `reports/plots/features/*.png`, `reports/plots/balance/*.png`, `reports/plots/heterogeneity/*.png`
+- Propensity CSV: `reports/propensity/propensity_results.csv`
+- Uplift: per-user scores `reports/uplift/uplift_scores_<method>.parquet`, summary `reports/uplift/uplift_results.csv`
+- Plots: `reports/plots/features/*.png`, `reports/plots/balance/*.png`, `reports/plots/heterogeneity/*.png`, `reports/plots/uplift/*.png`
 
 ### Heterogeneity (CATE) details
 
@@ -81,6 +89,22 @@ Artifacts:
 - Outputs:
   - CSV `reports/heterogeneity/cate_results.csv` includes: `feature`, `bin_label`, `bin_index`, `n_treat`, `n_control`, `p_treat`, `p_control`, `uplift`, `ci_low`, `ci_high` (floats rounded to 4 decimals).
   - Plots under `reports/plots/heterogeneity/` show uplift by bin with error bars (95% CI) and grids enabled.
+
+### Propensity methods
+
+- Propensity score estimation via logistic regression (optionally XGBoost if installed).
+- Methods implemented:
+  - IPW: inverse probability weighting ATE with robust SE and 95% CI.
+  - Matching: nearest-neighbor (k=1 by default) on standardized features, ATE with SE and 95% CI.
+- Results saved to `reports/propensity/propensity_results.csv`.
+
+### Uplift modeling
+
+- T-Learner, X-Learner (optionally Causal Forest via CausalML if available).
+- Outputs:
+  - Per-user uplift scores: `reports/uplift/uplift_scores_<method>.parquet`.
+  - Curves: Uplift and Qini under `reports/plots/uplift/`.
+  - Summary: `reports/uplift/uplift_results.csv` with Qini and uplift AUC.
 
 ## Project Structure
 ```

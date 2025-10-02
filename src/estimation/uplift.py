@@ -116,8 +116,6 @@ def x_learner(
     tau0.fit(X[t == 0], D0)
 
     # Propensity scores for blending
-    e = estimate_propensity_scores(pd.DataFrame(X, columns=x_cols), t_col="__t__", x_cols=x_cols, model="logit")
-    # But we need e on X; simpler: re-estimate on original df (with same mask)
     e_full = estimate_propensity_scores(df.loc[mask], t_col=t_col, x_cols=x_cols, model="logit")
 
     tau1_pred = tau1.predict_proba(X)[:, 1] if hasattr(tau1, "predict_proba") else tau1.predict(X)
@@ -252,6 +250,44 @@ def _save_curve_plot(x: np.ndarray, y: np.ndarray, title: str, out_path: str, sh
     plt.close()
 
 
+def _incremental_conversions_at_fracs(
+    y_true: np.ndarray,
+    t: np.ndarray,
+    uplift_scores: np.ndarray,
+    fracs: List[float],
+) -> Dict[str, int]:
+    """Compute incremental conversions at top-k%% thresholds.
+
+    For a given fraction f, select top f of users by uplift score (descending),
+    compute treated and control rates within that subset, and return:
+        incr = N_treat * (p_treat - p_ctrl)
+    """
+    mask = (~np.isnan(y_true)) & (~np.isnan(t)) & (~np.isnan(uplift_scores))
+    y = y_true[mask]
+    w = t[mask]
+    s = uplift_scores[mask]
+
+    order = np.argsort(-s)
+    y = y[order]
+    w = w[order]
+    n = len(y)
+    out: Dict[str, int] = {}
+    for f in fracs:
+        k = int(np.floor(f * n))
+        if k <= 0:
+            out[f"incr_conv_top{int(f*100)}"] = 0
+            continue
+        y_top = y[:k]
+        w_top = w[:k]
+        n_treat = int((w_top == 1).sum())
+        n_ctrl = int((w_top == 0).sum())
+        p_treat = float(y_top[w_top == 1].mean()) if n_treat > 0 else 0.0
+        p_ctrl = float(y_top[w_top == 0].mean()) if n_ctrl > 0 else 0.0
+        incr = int(round(n_treat * (p_treat - p_ctrl)))
+        out[f"incr_conv_top{int(f*100)}"] = incr
+    return out
+
+
 def run_uplift_models(
     df: pd.DataFrame,
     t_col: str,
@@ -270,7 +306,8 @@ def run_uplift_models(
     data = df
     if sample_size is not None and len(df) > sample_size:
         data = df.sample(sample_size, random_state=42).reset_index(drop=True)
-        logger.info("🔬 Downsampled to %,d rows for uplift models", len(data))
+        logger.info("🔬 Downsampled to %s rows for uplift models", f"{len(data):,}")
+
 
     y = pd.to_numeric(data[y_col], errors="coerce").fillna(0).astype(int).values
     t = pd.to_numeric(data[t_col], errors="coerce").fillna(0).astype(int).values
@@ -302,12 +339,22 @@ def run_uplift_models(
         qini = qini_coefficient(y, t, scores, bins=10)
         uplift_auc = float(np.trapz(y_uplift, x_uplift)) if len(x_uplift) > 1 else 0.0
 
-        summaries.append({"method": name, "qini": round(qini, 4), "uplift_auc": round(uplift_auc, 4)})
+        # Incremental conversions at top thresholds
+        incr = _incremental_conversions_at_fracs(y_true=y, t=t, uplift_scores=scores, fracs=[0.1, 0.2, 0.3])
+
+        summaries.append({
+            "method": name,
+            "qini": round(qini, 4),
+            "uplift_auc": round(uplift_auc, 4),
+            **incr,
+        })
 
         # Plots
         _save_curve_plot(x_uplift, y_uplift, f"Uplift Curve - {name}", os.path.join(plots_dir, f"{name}_uplift_curve.png"), show=show)
         _save_curve_plot(x_qini, y_qini, f"Qini Curve - {name}", os.path.join(plots_dir, f"{name}_qini_curve.png"), show=show)
-        logger.info("%s Qini=%.4f, uplift AUC=%.4f", name, qini, uplift_auc)
+        logger.info("%s Qini=%.4f, uplift AUC=%.4f, incr@10%%=%s, incr@20%%=%s, incr@30%%=%s",
+                    name, qini, uplift_auc,
+                    incr.get("incr_conv_top10"), incr.get("incr_conv_top20"), incr.get("incr_conv_top30"))
 
     results_df = pd.DataFrame(summaries)
     results_path = os.path.join(reports_dir, "uplift_results.csv")
