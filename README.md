@@ -104,7 +104,11 @@ Artifacts:
 - Outputs:
   - Per-user uplift scores: `reports/uplift/uplift_scores_<method>.parquet`.
   - Curves: Uplift and Qini under `reports/plots/uplift/`.
-  - Summary: `reports/uplift/uplift_results.csv` with Qini and uplift AUC.
+  - Summary: `reports/uplift/uplift_results.csv` with:
+    - `qini`, `uplift_auc` (model comparison)
+    - `incr_conv_top10`, `incr_conv_top20`, `incr_conv_top30` — incremental conversions when targeting the top 10/20/30% by predicted uplift. Computed as `N_treat * (p_treat - p_ctrl)` within each top-k% subgroup.
+
+Business interpretation: “If I only target the top-k% highest uplift users, how many extra conversions do I gain over control?” This provides an actionable KPI alongside Qini/AUC.
 
 ## Project Structure
 ```
@@ -119,14 +123,17 @@ Artifacts:
 │   └── plots/
 │       ├── features/
 │       ├── balance/
-│       └── heterogeneity/
+│       ├── heterogeneity/
+│       └── uplift/
 ├── src/
 │   ├── eda/
 │   │   ├── balance.py
 │   │   └── visualize.py
 │   ├── estimation/
 │   │   ├── baseline.py
-│   │   └── heterogeneity.py
+│   │   ├── heterogeneity.py
+│   │   ├── propensity.py
+│   │   └── uplift.py
 │   └── etl/
 │       └── prepare_dataset.py
 ├── pipeline.py
