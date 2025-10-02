@@ -171,21 +171,18 @@ def ate_matching(
 
 
 def run_propensity_methods(
-    df: pd.DataFrame,
+    df_ipw: pd.DataFrame,
+    df_match: pd.DataFrame,
     t_col: str,
     y_col: str,
     x_cols: List[str],
     reports_dir: str = "reports/propensity",
-    sample_size: Optional[int] = None,
 ) -> pd.DataFrame:
+    """Run IPW on df_ipw and Matching on df_match and write a single CSV summary."""
     os.makedirs(reports_dir, exist_ok=True)
-    if sample_size is not None and len(df) > sample_size:
-        df = df.sample(sample_size, random_state=42).reset_index(drop=True)
-        logger.info("🔬 Downsampled to %s rows for propensity methods", f"{len(df):,}")
 
-
-    res_ipw = ate_ipw(df, t_col, y_col, x_cols)
-    res_match = ate_matching(df, t_col, y_col, x_cols)
+    res_ipw = ate_ipw(df_ipw, t_col, y_col, x_cols)
+    res_match = ate_matching(df_match, t_col, y_col, x_cols)
 
     results_df = pd.DataFrame([res_ipw, res_match])
     # Round floats for readability

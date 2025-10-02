@@ -62,17 +62,17 @@ python pipeline.py --step balance --log-level INFO
 # Full run (no interactive plots; images saved under reports/plots/)
 python pipeline.py --step all --log-level INFO
 
-# Optional: downsample after loading Parquet (e.g., 1,000,000 rows)
-python pipeline.py --step all --sample-size 1000000 --log-level INFO
+# Optional: per-step stratified subsampling (faster dev runs)
+python pipeline.py --step all --subsample --log-level INFO
 
 # Heterogeneity (CATE) only
-python pipeline.py --step heterogeneity --sample-size 1000000 --log-level INFO
+python pipeline.py --step heterogeneity --subsample --log-level INFO
 
 # Propensity methods (IPW + Matching)
-python pipeline.py --step propensity --sample-size 1000000 --log-level INFO
+python pipeline.py --step propensity --subsample --log-level INFO
 
 # Uplift models (T-/X-learner, optional Causal Forest)
-python pipeline.py --step uplift --sample-size 1000000 --log-level INFO
+python pipeline.py --step uplift --subsample --log-level INFO
 ```
 
 Artifacts:

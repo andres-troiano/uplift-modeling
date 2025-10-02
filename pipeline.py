@@ -50,6 +50,41 @@ TREATMENT = "treatment"
 OUTCOME = "conversion"
 FEATURES = [f"f{i}" for i in range(12)]
 
+# Subsample controls (stratified by treatment)
+SUBSAMPLE_SIZES = {
+    "balance":       200_000,
+    "baseline":    1_000_000,
+    "prop_ipw":    1_000_000,
+    "prop_match":    100_000,
+    "heterogeneity": 300_000,
+    "uplift":        300_000,
+}
+SEED = 42
+
+
+def stratified_sample(df: pd.DataFrame, n: int, by: str, seed: int = SEED) -> pd.DataFrame:
+    if n is None or n >= len(df):
+        return df
+    total = len(df)
+    parts = []
+    for val, g in df.groupby(by):
+        take = max(1, int(round(len(g) * n / total)))
+        parts.append(g.sample(n=take, random_state=seed))
+    out = pd.concat(parts, ignore_index=True)
+    return out.sample(frac=1.0, random_state=seed).reset_index(drop=True)
+
+
+def maybe_subsample(df: pd.DataFrame, step_key: str, enabled: bool, by: str, seed: int = SEED) -> pd.DataFrame:
+    if not enabled:
+        return df
+    n = SUBSAMPLE_SIZES.get(step_key)
+    if n and n < len(df):
+        before = len(df)
+        df_s = stratified_sample(df, n=n, by=by, seed=seed)
+        logger.info("🔬 Subsampled for %s: %s → %s rows", step_key, f"{before:,}", f"{len(df_s):,}")
+        return df_s
+    return df
+
 
 # -----------------------
 # Pipeline Steps
@@ -92,7 +127,7 @@ def run_balance(df):
     balance_plots_dir = os.path.join(plots_root, "balance")
     os.makedirs(features_plots_dir, exist_ok=True)
     os.makedirs(balance_plots_dir, exist_ok=True)
-    plot_feature_distributions(df, sample_size=200_000, save_dir=features_plots_dir, show=False)
+    plot_feature_distributions(df, sample_size=SUBSAMPLE_SIZES["balance"], save_dir=features_plots_dir, show=False)
     logger.info("📊 Saved feature plots under %s", features_plots_dir)
     plot_balance_distributions(df, tr_col=TREATMENT, balance_df=balance_df, features=FEATURES, save_dir=balance_plots_dir, show=False)
     logger.info("📊 Saved balance plots under %s", balance_plots_dir)
@@ -121,15 +156,6 @@ def run_baseline(df):
         logit_res["n_control"],
     )
     return logit_res["ate_prob_diff"]
-
-
-def run_propensity(df):
-    """Run propensity score methods (IPW and Matching)."""
-    logger.info("⚖️ Running propensity score methods...")
-    out_dir = os.path.join("reports", "propensity")
-    os.makedirs(out_dir, exist_ok=True)
-    results_df = run_propensity_methods(df, t_col=TREATMENT, y_col=OUTCOME, x_cols=FEATURES, reports_dir=out_dir)
-    logger.info("📄 Propensity results saved with %d methods.", len(results_df))
 
 
 def run_uplift(df):
@@ -165,7 +191,7 @@ def run_heterogeneity(df):
 # Main
 # -----------------------
 
-def main(step: str, sample_size: Optional[int]):
+def main(step: str, subsample: bool, seed: int):
     if step == "prepare":
         run_prepare()
         return
@@ -173,33 +199,41 @@ def main(step: str, sample_size: Optional[int]):
     logger.info("📂 Loading data...")
     df = pd.read_parquet(RAW_PARQUET)
     logger.info("✅ Loaded %s rows and %s columns.", f"{len(df):,}", len(df.columns))
-    if sample_size is not None:
-        n_before = len(df)
-        n_sample = min(sample_size, n_before)
-        if n_sample < n_before:
-            df = df.sample(n_sample, random_state=42).reset_index(drop=True)
-            logger.info("🔬 Downsampled to %s rows (from %s)", f"{n_sample:,}", f"{n_before:,}")
-
-        else:
-            logger.info("🔬 Sample size (%,d) >= dataset rows (%,d); skipping downsample", sample_size, n_before)
 
 
     if step == "balance":
-        run_balance(df)
+        run_balance(maybe_subsample(df, "balance", subsample, TREATMENT, seed))
     elif step == "baseline":
-        run_baseline(df)
+        run_baseline(maybe_subsample(df, "baseline", subsample, TREATMENT, seed))
     elif step == "heterogeneity":
-        run_heterogeneity(df)
+        run_heterogeneity(maybe_subsample(df, "heterogeneity", subsample, TREATMENT, seed))
     elif step == "propensity":
-        run_propensity(df)
+        # Separate subsamples for IPW and Matching, then delegate to runner
+        df_ipw = maybe_subsample(df, "prop_ipw", subsample, TREATMENT, seed)
+        df_match = maybe_subsample(df, "prop_match", subsample, TREATMENT, seed)
+        out_dir = os.path.join("reports", "propensity")
+        os.makedirs(out_dir, exist_ok=True)
+        run_propensity_methods(df_ipw, df_match, TREATMENT, OUTCOME, FEATURES, reports_dir=out_dir)
     elif step == "uplift":
-        run_uplift(df)
+        run_uplift(maybe_subsample(df, "uplift", subsample, TREATMENT, seed))
     elif step == "all":
-        run_balance(df)
-        run_baseline(df)
-        run_heterogeneity(df)
-        run_propensity(df)
-        run_uplift(df)
+        df_b = maybe_subsample(df, "balance", subsample, TREATMENT, seed)
+        run_balance(df_b)
+
+        df_base = maybe_subsample(df, "baseline", subsample, TREATMENT, seed)
+        run_baseline(df_base)
+
+        df_het = maybe_subsample(df, "heterogeneity", subsample, TREATMENT, seed)
+        run_heterogeneity(df_het)
+
+        df_ipw = maybe_subsample(df, "prop_ipw", subsample, TREATMENT, seed)
+        df_match = maybe_subsample(df, "prop_match", subsample, TREATMENT, seed)
+        out_dir = os.path.join("reports", "propensity")
+        os.makedirs(out_dir, exist_ok=True)
+        run_propensity_methods(df_ipw, df_match, TREATMENT, OUTCOME, FEATURES, reports_dir=out_dir)
+
+        df_upl = maybe_subsample(df, "uplift", subsample, TREATMENT, seed)
+        run_uplift(df_upl)
     else:
         raise ValueError(f"Unknown step: {step}")
 
@@ -209,11 +243,12 @@ if __name__ == "__main__":
     parser.add_argument("--step", type=str, default="all",
                         help="Step to run: prepare | balance | baseline | heterogeneity | propensity | uplift | all")
     parser.add_argument("--log-level", type=str, default="INFO", help="Logging level: DEBUG, INFO, WARNING, ERROR")
-    parser.add_argument("--sample-size", type=int, default=None, help="Optional row count to downsample after loading Parquet")
+    parser.add_argument("--subsample", action="store_true", help="If set, use per-step subsample sizes with stratified sampling")
+    parser.add_argument("--seed", type=int, default=SEED, help="Random seed for sampling")
     args = parser.parse_args()
     level = getattr(logging, args.log_level.upper(), logging.INFO)
     logging.basicConfig(
         level=level,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    main(args.step, args.sample_size)
+    main(args.step, args.subsample, args.seed)
