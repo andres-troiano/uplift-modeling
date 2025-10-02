@@ -225,7 +225,9 @@ To establish a reference point, we estimated the **Average Treatment Effect (ATE
 
 * **Logistic regression with covariates (`logistic_adjusted_ate`)**
   Fits a model:
+
   logit(P(conversion)) = β₀ + β_w · treatment + β_X · X
+  
   The treatment coefficient (\beta_w) is interpreted as the causal effect after adjusting for observed features. We report:
 
   * **coef_w**: treatment coefficient (log-odds scale).
