@@ -1,20 +1,20 @@
-# Uplift Modeling — Criteo Dataset
+# Causal Uplift Modeling: Measuring Marketing Campaign ROI (Criteo Dataset)
 
 ## Overview
 
-Marketing teams often ask: **“How much of our sales lift was really caused by the campaign — and which customers should we target next time?”**
-Traditional analytics can only show correlation. This project uses **causal inference** to estimate the **incremental impact** of a digital advertising campaign, answering:
+Marketing teams often ask: “How much of our sales lift was really caused by the campaign — and which customers should we target next time?”
+Traditional analytics can only show correlation. This project uses causal inference to estimate the incremental impact of a digital advertising campaign, answering:
 
-* What is the **true Average Treatment Effect (ATE)** of the campaign?
-* Which customer segments respond differently (**heterogeneous treatment effects**)?
-* How can uplift models guide **smarter targeting strategies** that maximize ROI?
+* What is the true Average Treatment Effect (ATE) of the campaign?
+* Which customer segments respond differently (heterogeneous treatment effects)?
+* How can uplift models guide smarter targeting strategies that maximize ROI?
 
-Using the **Criteo Uplift Prediction Dataset (13M+ users)**, we implement a full pipeline:
+Using the Criteo Uplift Prediction Dataset (13M+ users), we implement a full pipeline:
 
-1. **Classical causal inference** (naïve ATE, logistic regression, propensity scores).
-2. **Heterogeneity analysis** (CATE by feature bins).
-3. **Causal machine learning** (T-Learner, X-Learner).
-4. **Evaluation with uplift/Qini curves**.
+1. Classical causal inference (naïve ATE, logistic regression, propensity scores).
+2. Heterogeneity analysis (CATE by feature bins).
+3. Causal machine learning (T-Learner, X-Learner).
+4. Evaluation with uplift/Qini curves.
 
 **Key takeaway:** by targeting only the top decile of high-uplift users, we simulate ~177 additional conversions for the same spend — a **2–3× efficiency gain** over blanket targeting.
 
@@ -183,7 +183,7 @@ Business interpretation: “If I only target the top-k% highest uplift users, ho
 
 ## 1. Balance Diagnostics
 
-We compared treatment vs control covariate distributions using **Kolmogorov–Smirnov (KS) tests**. To go beyond raw test statistics, we defined a **confounding risk level** per feature:
+We compared treatment vs control covariate distributions using Kolmogorov–Smirnov (KS) tests. To go beyond raw test statistics, we defined a confounding risk level per feature:
 
 * **High** risk: Feature shows both notable imbalance (KS ≥ 0.01) and correlation with the outcome (|corr| ≥ 0.1).
 * **Moderate** risk: Feature shows either imbalance or correlation, but not both.
@@ -210,14 +210,14 @@ This classification was implemented in `confounding_risk_table()`, which combine
 
 
 * We can see features classified as **Low risk**, suggesting good randomization.
-* Some features (notably **f6, f8, f3**) are **Moderate risk**, due to noticeable imbalance even if not strongly correlated with conversions.
+* Some features (notably f6, f8, f3) are **Moderate risk**, due to noticeable imbalance even if not strongly correlated with conversions.
 * No feature crossed both thresholds simultaneously, so **no High-risk confounders** were detected.
 
-This means that randomization was largely successful. However, adjusting for **moderate-risk features** in downstream analyses (e.g. via propensity scores or uplift models) can further reduce residual bias, ensuring the campaign's uplift estimates are robust.
+This means that randomization was largely successful. However, adjusting for moderate-risk features in downstream analyses (e.g. via propensity scores or uplift models) can further reduce residual bias, ensuring the campaign's uplift estimates are robust.
 
 ## 2. Baseline Causal Effect Estimates
 
-To establish a reference point, we estimated the **Average Treatment Effect (ATE)** using two approaches:
+To establish a reference point, we estimated the Average Treatment Effect (ATE) using two approaches:
 
 ### Methods
 
@@ -244,7 +244,7 @@ To establish a reference point, we estimated the **Average Treatment Effect (ATE
 | Naïve diff-in-means | 0.0014          | 0.0001 | [0.0012, 0.0017]  | 835,377 | 164,623   | –      | –          |
 | Logistic adjusted   | 0.0009 (approx) | 0.0603 | [0.2158, 0.4523]* | 835,377 | 164,623   | 0.3341 | 1.397      |
 
-*95% CI shown here is for the **log-odds coefficient**; the corresponding probability-scale interval is narrower, but less straightforward to compute analytically.
+*95% CI shown here is for the log-odds coefficient; the corresponding probability-scale interval is narrower, but less straightforward to compute analytically.
 
 * **Naïve ATE**: The campaign increased conversions by about **0.14 percentage points** (from a baseline ~0.23% conversion rate, this is a relative lift of ~60%). With millions of users, this difference is highly statistically significant.
 * **Logistic adjusted ATE**: After adjusting for user features, the estimated effect drops slightly (~0.09 percentage points). The odds ratio of **1.40** indicates that treated users are ~40% more likely to convert than controls, holding covariates constant.
@@ -255,7 +255,7 @@ Even the simplest baseline comparison shows the campaign is effective. However, 
 
 ## 3. Heterogeneous Treatment Effects (CATE)
 
-To investigate whether the campaign effect varies across user segments, we computed **Conditional Average Treatment Effects (CATE)** by binning each feature into quantiles and estimating uplift within each bin.
+To investigate whether the campaign effect varies across user segments, we computed Conditional Average Treatment Effects (CATE) by binning each feature into quantiles and estimating uplift within each bin.
 
 ### Methods
 
@@ -291,7 +291,7 @@ Not all users respond equally. While the global uplift is ~0.15pp, certain subgr
 
 ## 4. Propensity-Based Causal Estimates
 
-To further reduce potential bias from residual imbalances, we estimated the ATE using **propensity score methods**.
+To further reduce potential bias from residual imbalances, we estimated the ATE using propensity score methods.
 
 ### Methods
 
