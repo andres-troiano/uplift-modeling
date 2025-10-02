@@ -205,14 +205,12 @@ This classification was implemented in `confounding_risk_table()`, which combine
 | f11     | 0.0030  | 0.9925  | Low              |
 | f1      | 0.0029  | 0.9968  | Low              |
 
-**Interpretation:**
 
-* Some features are classified as **Low risk**, suggesting good randomization.
-* Several features (notably **f6, f8, f3**) are **Moderate risk**, due to noticeable imbalance even if not strongly correlated with conversions.
+* We can see features classified as **Low risk**, suggesting good randomization.
+* Some features (notably **f6, f8, f3**) are **Moderate risk**, due to noticeable imbalance even if not strongly correlated with conversions.
 * No feature crossed both thresholds simultaneously, so **no High-risk confounders** were detected.
 
-**Business takeaway:**
-Randomization was largely successful. However, adjusting for **moderate-risk features** in downstream analyses (e.g. via propensity scores or uplift models) can further reduce residual bias, ensuring the campaign's uplift estimates are robust.
+This means that randomization was largely successful. However, adjusting for **moderate-risk features** in downstream analyses (e.g. via propensity scores or uplift models) can further reduce residual bias, ensuring the campaign's uplift estimates are robust.
 
 ## 2. Baseline Causal Effect Estimates
 
@@ -227,8 +225,8 @@ To establish a reference point, we estimated the **Average Treatment Effect (ATE
   Fits a model:
 
   logit(P(conversion)) = β₀ + β_w · treatment + β_X · X
-  
-  The treatment coefficient (\beta_w) is interpreted as the causal effect after adjusting for observed features. We report:
+
+  The treatment coefficient (β_w) is interpreted as the causal effect after adjusting for observed features. We report:
 
   * **coef_w**: treatment coefficient (log-odds scale).
   * **odds_ratio**: exponentiated coefficient.
@@ -245,11 +243,41 @@ To establish a reference point, we estimated the **Average Treatment Effect (ATE
 
 *95% CI shown here is for the **log-odds coefficient**; the corresponding probability-scale interval is narrower, but less straightforward to compute analytically.
 
-### Interpretation
-
 * **Naïve ATE**: The campaign increased conversions by about **0.14 percentage points** (from a baseline ~0.23% conversion rate, this is a relative lift of ~60%). With millions of users, this difference is highly statistically significant.
 * **Logistic adjusted ATE**: After adjusting for user features, the estimated effect drops slightly (~0.09 percentage points). The odds ratio of **1.40** indicates that treated users are ~40% more likely to convert than controls, holding covariates constant.
 * The wide CI in the logistic regression output (on the log-odds scale) reflects the fact that conversions are rare events, making coefficient estimates noisier. Still, the point estimates support a **positive and meaningful incremental effect** of the campaign.
 
-**Business takeaway:**
 Even the simplest baseline comparison shows the campaign is effective. However, adjusted estimates suggest the effect is somewhat smaller after accounting for covariates — underlining the importance of **covariate adjustment** to avoid overstating ROI.
+
+
+## 3. Heterogeneous Treatment Effects (CATE)
+
+To investigate whether the campaign effect varies across user segments, we computed **Conditional Average Treatment Effects (CATE)** by binning each feature into quantiles and estimating uplift within each bin.
+
+### Methods
+
+* Features were binned into 4 quantiles (`pd.qcut` by default).
+* Within each bin, we estimated:
+  
+  uplift = P(conversion | treat=1) − P(conversion | treat=0)
+
+  along with a 95% Wald confidence interval.
+* Outputs were saved as both CSV (`reports/heterogeneity/cate_results.csv`) and per-feature plots (`reports/plots/heterogeneity/`).
+
+### Results (sample highlights)
+
+| Feature | Bin           | n_treat | n_control | p_treat | p_control | Uplift      | 95% CI            |
+| ------- | ------------- | ------- | --------- | ------- | --------- | ----------- | ----------------- |
+| **f0**  | (12.6, 21.8]  | 126k    | 23.9k     | 0.0066  | 0.0043    | **+0.0023** | [0.0014, 0.0033]  |
+| f0      | (24.4, 26.7]  | 62k     | 12.7k     | 0.0006  | 0.0006    | ~0.0        | [-0.0005, 0.0004] |
+| **f6**  | (-27.8, -7.3] | 66k     | 11.2k     | 0.0091  | 0.0058    | **+0.0033** | [0.0017, 0.0049]  |
+| f6      | (-3.3, 0.3]   | 115k    | 25.2k     | 0.0018  | 0.0014    | +0.0003     | [-0.0002, 0.0009] |
+| **f8**  | (3.6, 3.9]    | 66k     | 11.3k     | 0.0133  | 0.0100    | **+0.0033** | [0.0013, 0.0053]  |
+| f8      | (3.9, 4.0]    | 184k    | 38k       | 0.0003  | 0.0002    | +0.0001     | [-0.0001, 0.0002] |
+
+
+* **Strong uplift segments exist**. For example, users in lower ranges of **f6** or **f8** show incremental conversion lifts of ~0.3 percentage points — more than double the overall ATE.
+* **Flat/no effect bins**: Some bins (e.g. `f0` in (24.4, 26.7]) show negligible or zero uplift, suggesting these users are less influenced by the campaign.
+* **Implication for targeting**: By focusing spend on high-uplift segments (e.g. f6 low, f8 narrow bands), marketers could achieve substantially higher ROI.
+
+Not all users respond equally. While the global uplift is ~0.15pp, certain subgroups respond much more strongly, meaning **segment-level targeting could improve efficiency by 2–3×** compared to blanket campaigns.
