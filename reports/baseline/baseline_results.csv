@@ -1,0 +1,3 @@
+method,ate,se,ci_low,ci_high,n_treat,n_control,coef_w,odds_ratio
+naive_diff_in_means,0.0014,0.0001,0.0012,0.0017,835377,164623,,
+logistic_adjusted,0.0009,0.0603,0.2158,0.4523,835377,164623,0.3341,1.3967

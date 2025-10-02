@@ -155,6 +155,39 @@ def run_baseline(df):
         logit_res["n_treat"],
         logit_res["n_control"],
     )
+    # Persist baseline results to CSV
+    out_dir = os.path.join("reports", "baseline")
+    os.makedirs(out_dir, exist_ok=True)
+    n_treat = int((df[TREATMENT] == 1).sum())
+    n_control = int((df[TREATMENT] == 0).sum())
+    se_naive = ((p_treat * (1 - p_treat)) / max(1, n_treat) + (p_ctrl * (1 - p_ctrl)) / max(1, n_control)) ** 0.5
+    baseline_rows = [
+        {
+            "method": "naive_diff_in_means",
+            "ate": round(uplift, 4),
+            "se": round(float(se_naive), 4),
+            "ci_low": round(ci_low, 4),
+            "ci_high": round(ci_high, 4),
+            "n_treat": n_treat,
+            "n_control": n_control,
+        },
+        {
+            "method": "logistic_adjusted",
+            "ate": round(float(logit_res["ate_prob_diff"]), 4),
+            "se": round(float(logit_res["se"]), 4),
+            "ci_low": round(float(logit_res["ci_low"]), 4),
+            "ci_high": round(float(logit_res["ci_high"]), 4),
+            "n_treat": int(logit_res["n_treat"]),
+            "n_control": int(logit_res["n_control"]),
+            "coef_w": round(float(logit_res["coef_w"]), 4),
+            "odds_ratio": round(float(logit_res["odds_ratio"]), 4),
+        },
+    ]
+    baseline_df = pd.DataFrame(baseline_rows)
+    out_csv = os.path.join(out_dir, "baseline_results.csv")
+    baseline_df.to_csv(out_csv, index=False)
+    logger.info("📄 Saved baseline results to %s", out_csv)
+
     return logit_res["ate_prob_diff"]
 
 

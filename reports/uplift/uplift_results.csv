@@ -1,0 +1,3 @@
+method,qini,uplift_auc,incr_conv_top10,incr_conv_top20,incr_conv_top30
+t_learner,234.2992,0.0005,177,219,226
+x_learner,223.6766,0.0004,145,196,215

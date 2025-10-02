@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.base import clone
 
 from .propensity import estimate_propensity_scores
@@ -109,9 +109,9 @@ def x_learner(
     D1 = y[t == 1] - m0.predict_proba(X[t == 1])[:, 1]
     D0 = m1.predict_proba(X[t == 0])[:, 1] - y[t == 0]
 
-    # Meta-learners
-    tau1 = _make_base_model(base_model, model_hint)
-    tau0 = _make_base_model(base_model, model_hint)
+    # Meta-learners must be regressors, since D1/D0 are continuous
+    tau1 = Ridge(alpha=1.0)
+    tau0 = Ridge(alpha=1.0)
     tau1.fit(X[t == 1], D1)
     tau0.fit(X[t == 0], D0)
 
