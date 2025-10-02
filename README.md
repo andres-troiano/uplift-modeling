@@ -207,9 +207,49 @@ This classification was implemented in `confounding_risk_table()`, which combine
 
 **Interpretation:**
 
-* Most features are classified as **Low risk**, suggesting good randomization.
+* Some features are classified as **Low risk**, suggesting good randomization.
 * Several features (notably **f6, f8, f3**) are **Moderate risk**, due to noticeable imbalance even if not strongly correlated with conversions.
 * No feature crossed both thresholds simultaneously, so **no High-risk confounders** were detected.
 
 **Business takeaway:**
 Randomization was largely successful. However, adjusting for **moderate-risk features** in downstream analyses (e.g. via propensity scores or uplift models) can further reduce residual bias, ensuring the campaign's uplift estimates are robust.
+
+## 2. Baseline Causal Effect Estimates
+
+To establish a reference point, we estimated the **Average Treatment Effect (ATE)** using two approaches:
+
+### Methods
+
+* **Naïve difference in means (`diff_in_means`)**
+  Computes the raw conversion rate difference between treatment and control groups, with a Wald 95% CI.
+
+* **Logistic regression with covariates (`logistic_adjusted_ate`)**
+  Fits a model:
+  [
+  \text{logit}(P(\text{conversion})) = \beta_0 + \beta_w \cdot \text{treatment} + \beta_X \cdot X
+  ]
+  The treatment coefficient (\beta_w) is interpreted as the causal effect after adjusting for observed features. We report:
+
+  * **coef_w**: treatment coefficient (log-odds scale).
+  * **odds_ratio**: exponentiated coefficient.
+  * **ate_prob_diff**: approximate average probability difference (ATE on outcome scale).
+
+* *(Optional)* **CUPED adjustment (`cuped_adjustment`)** can be used if pre-treatment outcomes are available, to reduce variance via covariance adjustment.
+
+### Results
+
+| Method              | ATE (prob diff) | SE     | 95% CI            | n_treat | n_control | coef_w | Odds Ratio |
+| ------------------- | --------------- | ------ | ----------------- | ------- | --------- | ------ | ---------- |
+| Naïve diff-in-means | 0.0014          | 0.0001 | [0.0012, 0.0017]  | 835,377 | 164,623   | –      | –          |
+| Logistic adjusted   | 0.0009 (approx) | 0.0603 | [0.2158, 0.4523]* | 835,377 | 164,623   | 0.3341 | 1.397      |
+
+*95% CI shown here is for the **log-odds coefficient**; the corresponding probability-scale interval is narrower, but less straightforward to compute analytically.
+
+### Interpretation
+
+* **Naïve ATE**: The campaign increased conversions by about **0.14 percentage points** (from a baseline ~0.23% conversion rate, this is a relative lift of ~60%). With millions of users, this difference is highly statistically significant.
+* **Logistic adjusted ATE**: After adjusting for user features, the estimated effect drops slightly (~0.09 percentage points). The odds ratio of **1.40** indicates that treated users are ~40% more likely to convert than controls, holding covariates constant.
+* The wide CI in the logistic regression output (on the log-odds scale) reflects the fact that conversions are rare events, making coefficient estimates noisier. Still, the point estimates support a **positive and meaningful incremental effect** of the campaign.
+
+**Business takeaway:**
+Even the simplest baseline comparison shows the campaign is effective. However, adjusted estimates suggest the effect is somewhat smaller after accounting for covariates — underlining the importance of **covariate adjustment** to avoid overstating ROI.
