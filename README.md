@@ -40,15 +40,16 @@ Notes:
    - `--dedupe-subset col1,col2` to define duplicates by subset of columns (default: all columns).
    - `--deduped-parquet path.parquet` to write the deduped output to a separate file.
 
-## Notebooks
-Open the EDA notebook after conversion:
 
-```bash
-jupyter lab
-```
-Then open `notebooks/01_eda_uplift.ipynb`. It expects Parquet at `data/criteo-uplift-v2.1.parquet`.
+## Pipeline steps
 
-## Pipeline
+- **prepare**: Downloads (if needed), extracts `.csv.gz`, and converts CSV → Parquet with optional chunked deduplication. Saves `data/criteo-uplift-v2.1.parquet`.
+- **balance**: Compares treatment vs control covariate distributions using KS tests; saves raw results and imbalance summary; generates feature and balance plots. Artifacts under `reports/balance/` and `reports/plots/{features,balance}/`.
+- **baseline**: Estimates ATE via naïve difference-in-means and logistic-regression-adjusted model. Saves `reports/baseline/baseline_results.csv` with ATE, SE, 95% CI, and group sizes.
+- **heterogeneity**: Computes CATE by binning features (quantiles) and estimating per-bin uplift with 95% CI; saves CSV and plots under `reports/heterogeneity/` and `reports/plots/heterogeneity/`.
+- **propensity**: Estimates propensity scores (logit or XGBoost) and computes ATE via IPW and nearest-neighbor matching; saves `reports/propensity/propensity_results.csv`.
+- **uplift**: Trains T-/X-learners (optional Causal Forest if available), outputs uplift and Qini curves, per-user uplift scores, Qini and uplift AUC, and incremental conversions at top-k%. Artifacts under `reports/uplift/` and `reports/plots/uplift/`.
+- **all**: Runs all steps in sequence. When `--subsample` is set, each step uses its own stratified subsample size for faster iteration.
 
 Run steps via `pipeline.py`:
 
@@ -76,6 +77,7 @@ python pipeline.py --step uplift --subsample --log-level INFO
 ```
 
 Artifacts:
+- Baseline CSV: `reports/baseline/baseline_results.csv`
 - CSVs: `reports/balance/balance_results.csv`, `reports/balance/balance_summary.csv`
 - CATE CSV: `reports/heterogeneity/cate_results.csv`
 - Propensity CSV: `reports/propensity/propensity_results.csv`
