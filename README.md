@@ -126,7 +126,7 @@ Artifacts:
     - `qini`, `uplift_auc` (model comparison)
     - `incr_conv_top10`, `incr_conv_top20`, `incr_conv_top30` — incremental conversions when targeting the top 10/20/30% by predicted uplift. Computed as `N_treat * (p_treat - p_ctrl)` within each top-k% subgroup.
 
-Business interpretation: “If I only target the top-k% highest uplift users, how many extra conversions do I gain over control?” This provides an actionable KPI alongside Qini/AUC.
+Business interpretation: “If I only target the top-k% highest uplift users, how many extra conversions do I gain over control?”
 
 ## Project Structure
 ```
