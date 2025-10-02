@@ -175,3 +175,41 @@ BibTeX:
   year = {2018}
 }
 ```
+
+# Results
+
+## 1. Balance Diagnostics
+
+We compared treatment vs control covariate distributions using **Kolmogorov–Smirnov (KS) tests**. To go beyond raw test statistics, we defined a **confounding risk level** per feature:
+
+* **High** risk: Feature shows both notable imbalance (KS ≥ 0.01) and correlation with the outcome (|corr| ≥ 0.1).
+* **Moderate** risk: Feature shows either imbalance or correlation, but not both.
+* **Low** risk: Feature shows neither imbalance nor correlation.
+
+This classification was implemented in `confounding_risk_table()`, which combines the KS statistics with correlations against the conversion label.
+
+**Findings:**
+
+| Feature | KS Stat | p-value | Confounding Risk |
+| ------- | ------- | ------- | ---------------- |
+| f6      | 0.0497  | 0.0000  | Moderate         |
+| f8      | 0.0387  | 0.0000  | Moderate         |
+| f3      | 0.0307  | 0.0000  | Moderate         |
+| f9      | 0.0254  | 0.0000  | Moderate         |
+| f2      | 0.0185  | 0.0000  | Moderate         |
+| f0      | 0.0173  | 0.0000  | Moderate         |
+| f5      | 0.0111  | 0.0147  | Moderate         |
+| f7      | 0.0111  | 0.0147  | Moderate         |
+| f10     | 0.0087  | 0.0979  | Low              |
+| f4      | 0.0086  | 0.1029  | Low              |
+| f11     | 0.0030  | 0.9925  | Low              |
+| f1      | 0.0029  | 0.9968  | Low              |
+
+**Interpretation:**
+
+* Most features are classified as **Low risk**, suggesting good randomization.
+* Several features (notably **f6, f8, f3**) are **Moderate risk**, due to noticeable imbalance even if not strongly correlated with conversions.
+* No feature crossed both thresholds simultaneously, so **no High-risk confounders** were detected.
+
+**Business takeaway:**
+Randomization was largely successful. However, adjusting for **moderate-risk features** in downstream analyses (e.g. via propensity scores or uplift models) can further reduce residual bias, ensuring the campaign's uplift estimates are robust.
