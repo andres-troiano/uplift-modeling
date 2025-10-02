@@ -11,6 +11,22 @@ pip install -r requirements.txt
 ## Data
 Data source: [Criteo Uplift Prediction Dataset](https://ailab.criteo.com/criteo-uplift-prediction-dataset/). Please review the license and cite the dataset/paper accordingly.
 
+### Dataset description
+
+- Purpose: large-scale public dataset for evaluating uplift/causal response models in advertising.
+- Scale: millions of rows (raw CSV is several GB; Parquet recommended for iteration).
+- Columns used in this project (renamed/standardized in code):
+  - `treatment` (binary): 1 if exposed to the campaign, 0 otherwise.
+  - `conversion` (binary): 1 if converted, 0 otherwise. Often highly imbalanced.
+  - `f0` … `f11` (numeric): anonymized covariates used as features.
+- Files and formats:
+  - Raw: `.csv.gz` compressed file from the Criteo page.
+  - Extracted: `.csv` (very large; used only for one-time conversion).
+  - Optimized: `.parquet` (columnar, faster load/compute). Default path: `data/criteo-uplift-v2.1.parquet`.
+- Notes:
+  - The project expects the column names above. If your raw file uses different names, adjust in `pipeline.py` or during preparation.
+  - Outcomes are rare; confidence intervals and stratified subsampling can help with faster, stable iteration.
+
 ### One-time download, extract, and CSV → Parquet conversion
 Use the standalone script to download the `.csv.gz` (if not present), extract to CSV, and convert to Parquet.
 
