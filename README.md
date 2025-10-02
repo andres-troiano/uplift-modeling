@@ -1,5 +1,24 @@
 # Uplift Modeling — Criteo Dataset
 
+## Overview
+
+Marketing teams often ask: **“How much of our sales lift was really caused by the campaign — and which customers should we target next time?”**
+Traditional analytics can only show correlation. This project uses **causal inference** to estimate the **incremental impact** of a digital advertising campaign, answering:
+
+* What is the **true Average Treatment Effect (ATE)** of the campaign?
+* Which customer segments respond differently (**heterogeneous treatment effects**)?
+* How can uplift models guide **smarter targeting strategies** that maximize ROI?
+
+Using the **Criteo Uplift Prediction Dataset (13M+ users)**, we implement a full pipeline:
+
+1. **Classical causal inference** (naïve ATE, logistic regression, propensity scores).
+2. **Heterogeneity analysis** (CATE by feature bins).
+3. **Causal machine learning** (T-Learner, X-Learner).
+4. **Evaluation with uplift/Qini curves**.
+
+**Key takeaway:** by targeting only the top decile of high-uplift users, we simulate ~177 additional conversions for the same spend — a **2–3× efficiency gain** over blanket targeting.
+
+
 ## Setup
 
 ```bash
@@ -340,6 +359,40 @@ Instead of treating all users equally, **targeting only the top decile by uplift
 ![t learner uplift curve](reports/plots/uplift/t_learner_uplift_curve.png)
 ![t learner qini curve](reports/plots/uplift/t_learner_qini_curve.png)
 
+## Executive Summary & Recommendations
+
+**Findings:**
+
+* The campaign produced a **positive and statistically significant lift** in conversions:
+
+  * **Naïve ATE:** +0.14 percentage points (~60% relative increase).
+  * **Adjusted ATE:** +0.09 percentage points after covariate adjustment.
+* **No high-risk confounders** were detected; randomization was effective, with only moderate imbalances on a few features.
+* **Heterogeneity analysis** revealed that certain user segments (e.g., low ranges of features f6 and f8) experienced uplifts of **0.3pp+**, more than double the global average.
+* **Uplift modeling** (T-Learner, X-Learner) showed that **precision targeting** outperforms blanket campaigns:
+
+  * Targeting only the **top 10% uplift users** yields ~**177 incremental conversions**, compared to ~145 for the X-Learner.
+  * Incremental benefit flattens at 20–30%, highlighting **diminishing returns**.
+
+**Business Implications:**
+
+* **Smarter targeting = higher ROI.** By reallocating spend to the top decile of high-uplift users, the advertiser could achieve **2–3× greater efficiency** compared to uniform targeting.
+* **Segment-level insights** can inform personalized campaigns: avoid low- or zero-uplift segments to prevent wasted impressions.
+* **Robustness checks (propensity/IPW/matching)** confirm that the observed lift is **causal**, not just correlation.
+
+**Recommendations:**
+
+1. **Adopt uplift-based targeting** to prioritize users most responsive to ads.
+2. **Design future campaigns with A/B testing or randomized holdouts** to ensure unbiased incrementality measurement.
+3. **Invest in segment-specific creative/strategies** for high-response groups (e.g., f6 low, f8 narrow bins).
+4. **Scale with ML-based uplift models** to automate targeting and continuously optimize ROI.
+
+
+## Future work
+
+- Causal Forests / Double ML (EconML).
+- CUPED adjustment (variance reduction).
+- Dashboard (Streamlit) for exploring uplift by segment.
 
 
 ## Citation
