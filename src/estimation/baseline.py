@@ -60,10 +60,18 @@ def logistic_adjusted_ate(
         - n_treat, n_control: sample sizes
     """
 
-    # Prepare data
-    y = df[y_col].astype(int).values
-    w = df[w_col].astype(int).values
-    X = df[x_cols].values
+    # Prepare data: coerce to numeric and filter NaNs
+    X_df = df[x_cols].apply(pd.to_numeric, errors="coerce").astype(float)
+    y_s = pd.to_numeric(df[y_col], errors="coerce")
+    w_s = pd.to_numeric(df[w_col], errors="coerce")
+
+    mask = (~y_s.isna()) & (~w_s.isna())
+    mask &= (~X_df.isna()).all(axis=1)
+
+    # Binarize outcome/treatment (assume >0 indicates positive class)
+    y = (y_s[mask] > 0).astype(int).values
+    w = (w_s[mask] > 0).astype(int).values
+    X = X_df.loc[mask].values
 
     # Add constant and treatment as first column
     X_model = sm.add_constant(np.column_stack([w, X]))
@@ -75,7 +83,15 @@ def logistic_adjusted_ate(
     # Extract treatment coefficient (col=1 after constant)
     coef_w = float(result.params[1])
     se_w = float(result.bse[1])
-    ci_low, ci_high = result.conf_int().loc[1]
+    ci = result.conf_int()
+    try:
+        # Preferred: DataFrame with iloc
+        ci_low = float(ci.iloc[1, 0])
+        ci_high = float(ci.iloc[1, 1])
+    except Exception:
+        # Fallback: numpy array
+        ci_low = float(ci[1, 0])
+        ci_high = float(ci[1, 1])
 
     # Odds ratio
     odds_ratio = float(np.exp(coef_w))

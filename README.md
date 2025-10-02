@@ -61,11 +61,18 @@ python pipeline.py --step balance --log-level INFO
 
 # Full run (no interactive plots; images saved under reports/plots/)
 python pipeline.py --step all --log-level INFO
+
+# Optional: downsample after loading Parquet (e.g., 1,000,000 rows)
+python pipeline.py --step all --sample-size 1000000 --log-level INFO
+
+# Heterogeneity (CATE) only
+python pipeline.py --step heterogeneity --sample-size 1000000 --log-level INFO
 ```
 
 Artifacts:
 - CSVs: `reports/balance/balance_results.csv`, `reports/balance/balance_summary.csv`
-- Plots: `reports/plots/features/*.png`, `reports/plots/balance/*.png`
+- CATE CSV: `reports/heterogeneity/cate_results.csv`
+- Plots: `reports/plots/features/*.png`, `reports/plots/balance/*.png`, `reports/plots/heterogeneity/*.png`
 
 ## Project Structure
 ```

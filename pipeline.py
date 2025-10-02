@@ -17,6 +17,7 @@ import argparse
 import os
 import pandas as pd
 import logging
+from typing import Optional
 
 # ETL (dataset preparation)
 from src.etl.prepare_dataset import ensure_csv, convert_csv_to_parquet
@@ -30,6 +31,7 @@ from src.eda.visualize import (
 
 # Baseline causal estimation
 from src.estimation.baseline import diff_in_means, logistic_adjusted_ate
+from src.estimation.heterogeneity import run_cate_by_feature_bins
 logger = logging.getLogger(__name__)
 # Propensity & Uplift (placeholders for now)
 # from src.estimation.propensity import run_ipw, run_matching
@@ -132,11 +134,29 @@ def run_uplift(df):
     # run_uplift_models(df, TREATMENT, OUTCOME, FEATURES)
 
 
+def run_heterogeneity(df):
+    """Run CATE (heterogeneity) analysis by feature bins and save artifacts."""
+    logger.info("🔎 Running CATE (heterogeneity) analysis...")
+    cate_df = run_cate_by_feature_bins(
+        df,
+        y_col=OUTCOME,
+        w_col=TREATMENT,
+        features=FEATURES,
+        n_bins=4,
+        binning="quantile",
+        reports_dir=os.path.join("reports", "heterogeneity"),
+        plots_dir=os.path.join("reports", "plots", "heterogeneity"),
+        show=False,
+        fit_interactions=False,
+    )
+    logger.info("📄 CATE analysis complete; %d rows in results.", len(cate_df))
+    return cate_df
+
 # -----------------------
 # Main
 # -----------------------
 
-def main(step: str):
+def main(step: str, sample_size: Optional[int]):
     if step == "prepare":
         run_prepare()
         return
@@ -144,12 +164,23 @@ def main(step: str):
     logger.info("📂 Loading data...")
     df = pd.read_parquet(RAW_PARQUET)
     logger.info("✅ Loaded %s rows and %s columns.", f"{len(df):,}", len(df.columns))
+    if sample_size is not None:
+        n_before = len(df)
+        n_sample = min(sample_size, n_before)
+        if n_sample < n_before:
+            df = df.sample(n_sample, random_state=42).reset_index(drop=True)
+            logger.info("🔬 Downsampled to %s rows (from %s)", f"{n_sample:,}", f"{n_before:,}")
+
+        else:
+            logger.info("🔬 Sample size (%,d) >= dataset rows (%,d); skipping downsample", sample_size, n_before)
 
 
     if step == "balance":
         run_balance(df)
     elif step == "baseline":
         run_baseline(df)
+    elif step == "heterogeneity":
+        run_heterogeneity(df)
     elif step == "propensity":
         run_propensity(df)
     elif step == "uplift":
@@ -157,6 +188,7 @@ def main(step: str):
     elif step == "all":
         run_balance(df)
         run_baseline(df)
+        run_heterogeneity(df)
         run_propensity(df)
         run_uplift(df)
     else:
@@ -166,12 +198,13 @@ def main(step: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Uplift Modeling Pipeline")
     parser.add_argument("--step", type=str, default="all",
-                        help="Step to run: prepare | balance | baseline | propensity | uplift | all")
+                        help="Step to run: prepare | balance | baseline | heterogeneity | propensity | uplift | all")
     parser.add_argument("--log-level", type=str, default="INFO", help="Logging level: DEBUG, INFO, WARNING, ERROR")
+    parser.add_argument("--sample-size", type=int, default=None, help="Optional row count to downsample after loading Parquet")
     args = parser.parse_args()
     level = getattr(logging, args.log_level.upper(), logging.INFO)
     logging.basicConfig(
         level=level,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    main(args.step)
+    main(args.step, args.sample_size)
