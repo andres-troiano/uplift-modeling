@@ -159,22 +159,6 @@ Business interpretation: “If I only target the top-k% highest uplift users, ho
 └── README.md
 ```
 
-## Citation
-If you use this dataset, please cite:
-
-Diemert, E., Betlei, A., Renaudin, C., & Amini, M.-R. (2018). A Large Scale Benchmark for Uplift Modeling. AdKDD 2018.
-
-BibTeX:
-
-```
-@inproceedings{Diemert2018,
-  author = {{Diemert Eustache, Betlei Artem} and Renaudin, Christophe and Massih-Reza, Amini},
-  title = {A Large Scale Benchmark for Uplift Modeling},
-  publisher = {ACM},
-  booktitle = {Proceedings of the AdKDD and TargetAd Workshop, KDD, London, United Kingdom, August, 20, 2018},
-  year = {2018}
-}
-```
 
 # Results
 
@@ -321,3 +305,53 @@ To further reduce potential bias from residual imbalances, we estimated the ATE 
 * Confidence intervals are tight and overlap across methods, supporting robustness.
 
 Even after adjusting for covariates via propensity methods, the incremental lift remains positive. This strengthens confidence that the observed effect is **causal rather than spurious**, meaning the campaign is indeed driving conversions.
+
+
+## 5. Uplift Modeling
+
+Finally, we applied **causal machine learning models** to estimate individualized treatment effects (uplift) and evaluate campaign targeting strategies.
+
+### Methods
+
+* **T-Learner**: trains separate models for treated vs. control users, then predicts uplift as the difference.
+* **X-Learner**: imputes treatment effects for each group and blends them using propensity weights.
+* *(Optional)* **Causal Forest**: to be added in the future.
+
+Each model outputs per-user **uplift scores**. We evaluate models using:
+
+* **Qini coefficient**: area under the Qini curve (higher = better targeting).
+* **Uplift AUC**: area under the uplift curve.
+* **Incremental conversions at top-k%**: extra conversions if targeting the top 10/20/30% of users ranked by predicted uplift.
+
+### Results
+
+| Method    | Qini      | Uplift AUC | incr@10% | incr@20% | incr@30% |
+| --------- | --------- | ---------- | -------- | -------- | -------- |
+| T-Learner | **234.3** | 0.0005     | **177**  | 219      | 226      |
+| X-Learner | 223.7     | 0.0004     | 145      | 196      | 215      |
+
+* Both uplift models identify **incremental conversions beyond average targeting**.
+* The **T-Learner performed slightly better** (higher Qini, more incremental conversions in top 10%).
+* The gain is most pronounced in the **top 10% segment** (177 extra conversions vs 145 for X-Learner).
+* Incremental benefit flattens as more users are targeted (diminishing returns).
+
+Instead of treating all users equally, **targeting only the top decile by uplift score yields ~177 additional conversions** compared to random targeting. This demonstrates the practical ROI of uplift modeling: the company could allocate budget more efficiently, focusing spend on the most responsive users.
+
+
+
+## Citation
+If you use this dataset, please cite:
+
+Diemert, E., Betlei, A., Renaudin, C., & Amini, M.-R. (2018). A Large Scale Benchmark for Uplift Modeling. AdKDD 2018.
+
+BibTeX:
+
+```
+@inproceedings{Diemert2018,
+  author = {{Diemert Eustache, Betlei Artem} and Renaudin, Christophe and Massih-Reza, Amini},
+  title = {A Large Scale Benchmark for Uplift Modeling},
+  publisher = {ACM},
+  booktitle = {Proceedings of the AdKDD and TargetAd Workshop, KDD, London, United Kingdom, August, 20, 2018},
+  year = {2018}
+}
+```
