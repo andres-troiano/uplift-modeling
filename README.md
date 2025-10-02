@@ -74,6 +74,14 @@ Artifacts:
 - CATE CSV: `reports/heterogeneity/cate_results.csv`
 - Plots: `reports/plots/features/*.png`, `reports/plots/balance/*.png`, `reports/plots/heterogeneity/*.png`
 
+### Heterogeneity (CATE) details
+
+- Binning: features are split into quartiles (or fewer bins if low cardinality). Numeric bin labels show interval endpoints rounded to 1 decimal (e.g., `(0.1, 2.3]`).
+- Estimation: uplift per bin is computed via difference-in-means (probability difference) with 95% Wald confidence intervals.
+- Outputs:
+  - CSV `reports/heterogeneity/cate_results.csv` includes: `feature`, `bin_label`, `bin_index`, `n_treat`, `n_control`, `p_treat`, `p_control`, `uplift`, `ci_low`, `ci_high` (floats rounded to 4 decimals).
+  - Plots under `reports/plots/heterogeneity/` show uplift by bin with error bars (95% CI) and grids enabled.
+
 ## Project Structure
 ```
 ├── data/
@@ -82,15 +90,19 @@ Artifacts:
 │   ├── balance/
 │   │   ├── balance_results.csv
 │   │   └── balance_summary.csv
+│   ├── heterogeneity/
+│   │   └── cate_results.csv
 │   └── plots/
 │       ├── features/
-│       └── balance/
+│       ├── balance/
+│       └── heterogeneity/
 ├── src/
 │   ├── eda/
 │   │   ├── balance.py
 │   │   └── visualize.py
 │   ├── estimation/
-│   │   └── baseline.py
+│   │   ├── baseline.py
+│   │   └── heterogeneity.py
 │   └── etl/
 │       └── prepare_dataset.py
 ├── pipeline.py
