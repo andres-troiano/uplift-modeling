@@ -60,5 +60,5 @@ data/**/*.zst
 # Reports/outputs (optional)
 reports/**/*.html
 reports/**/*.pdf
-reports/**/*.png
+#reports/**/*.png
 reports/**/*.svg

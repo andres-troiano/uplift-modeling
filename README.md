@@ -283,4 +283,4 @@ To investigate whether the campaign effect varies across user segments, we compu
 
 Not all users respond equally. While the global uplift is ~0.15pp, certain subgroups respond much more strongly, meaning **segment-level targeting could improve efficiency by 2–3×** compared to blanket campaigns.
 
-![CATE by f6](./reports/plots/heterogeneity/cate_f6.png)
+![CATE by f6](reports/plots/heterogeneity/cate_f6.png)
