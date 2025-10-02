@@ -284,3 +284,40 @@ To investigate whether the campaign effect varies across user segments, we compu
 Not all users respond equally. While the global uplift is ~0.15pp, certain subgroups respond much more strongly, meaning **segment-level targeting could improve efficiency by 2–3×** compared to blanket campaigns.
 
 ![CATE by f6](reports/plots/heterogeneity/cate_f6.png)
+
+
+## 4. Propensity-Based Causal Estimates
+
+To further reduce potential bias from residual imbalances, we estimated the ATE using **propensity score methods**.
+
+### Methods
+
+* **IPW (Inverse Probability Weighting)**
+
+  * Fit a logistic regression to estimate the probability of treatment given covariates:
+
+    e(X) = P(T=1 | X)
+    
+  * Weight treated users by 1 / e(X) and controls by 1 / (1 − e(X)).
+  * Provides an unbiased ATE estimate if the propensity model is correctly specified.
+
+* **Nearest-neighbor Matching**
+
+  * Standardized features and matched each treated user with the closest control(s), and vice versa.
+  * Computed ATE as the mean difference in outcomes across matched pairs.
+  * Uses (k=1) neighbor by default for tighter matches.
+
+### Results
+
+| Method       | ATE (prob diff) | SE     | 95% CI           | n_treat | n_control |
+| ------------ | --------------- | ------ | ---------------- | ------- | --------- |
+| **IPW**      | 0.0008          | 0.0002 | [0.0005, 0.0011] | 835,377 | 164,623   |
+| **Matching** | 0.0011          | 0.0002 | [0.0007, 0.0016] | 83,538  | 16,462    |
+
+
+* Both methods confirm a **positive campaign effect**, consistent with baseline estimates.
+* **IPW** is slightly more conservative (~0.08 percentage points lift).
+* **Matching** produces an estimate closer to the naïve ATE (~0.11 percentage points), suggesting that covariates did not introduce strong hidden bias.
+* Confidence intervals are tight and overlap across methods, supporting robustness.
+
+Even after adjusting for covariates via propensity methods, the incremental lift remains positive. This strengthens confidence that the observed effect is **causal rather than spurious**, meaning the campaign is indeed driving conversions.
