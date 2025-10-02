@@ -275,9 +275,12 @@ To investigate whether the campaign effect varies across user segments, we compu
 | **f8**  | (3.6, 3.9]    | 66k     | 11.3k     | 0.0133  | 0.0100    | **+0.0033** | [0.0013, 0.0053]  |
 | f8      | (3.9, 4.0]    | 184k    | 38k       | 0.0003  | 0.0002    | +0.0001     | [-0.0001, 0.0002] |
 
+(full CSV [here](reports/heterogeneity/cate_results.csv))
 
 * **Strong uplift segments exist**. For example, users in lower ranges of **f6** or **f8** show incremental conversion lifts of ~0.3 percentage points — more than double the overall ATE.
 * **Flat/no effect bins**: Some bins (e.g. `f0` in (24.4, 26.7]) show negligible or zero uplift, suggesting these users are less influenced by the campaign.
 * **Implication for targeting**: By focusing spend on high-uplift segments (e.g. f6 low, f8 narrow bands), marketers could achieve substantially higher ROI.
 
 Not all users respond equally. While the global uplift is ~0.15pp, certain subgroups respond much more strongly, meaning **segment-level targeting could improve efficiency by 2–3×** compared to blanket campaigns.
+
+![CATE by f6](reports/plots/heterogeneity/cate_f6.png)
