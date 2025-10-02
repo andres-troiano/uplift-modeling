@@ -3,7 +3,7 @@
 
 ## Overview
 
-Marketing teams often ask: “How much of our sales lift was really caused by the campaign — and which customers should we target next time?”
+Marketing teams often ask: "How much of our sales lift was really caused by the campaign?", and "Which customers should we target next time?"
 Traditional analytics can only show correlation. This project uses causal inference to estimate the incremental impact of a digital advertising campaign, answering:
 
 * What is the true Average Treatment Effect (ATE) of the campaign?
@@ -46,35 +46,6 @@ Data source: [Criteo Uplift Prediction Dataset](https://ailab.criteo.com/criteo-
 - Notes:
   - The project expects the column names above. If your raw file uses different names, adjust in `pipeline.py` or during preparation.
   - Outcomes are rare; confidence intervals and stratified subsampling can help with faster, stable iteration.
-
-### One-time download, extract, and CSV → Parquet conversion
-Use the standalone script to download the `.csv.gz` (if not present), extract to CSV, and convert to Parquet.
-
-```bash
-# Default: uses the Criteo dataset page to auto-resolve the .csv.gz
-python src/etl/prepare_dataset.py \
-  data/criteo-uplift-v2.1.csv \
-  data/criteo-uplift-v2.1.parquet \
-  --chunksize 1000000
-
-# Or specify a direct .csv.gz URL explicitly
-python src/etl/prepare_dataset.py \
-  data/criteo-uplift-v2.1.csv \
-  data/criteo-uplift-v2.1.parquet \
-  --download-url "https://example.com/criteo-uplift-v2.1.csv.gz" \
-  --chunksize 1000000
-```
-
-Notes:
-- If you already have `data/criteo-uplift-v2.1.csv.gz`, the script will extract it.
-- If you already have the CSV, it will skip download/extract and go straight to conversion.
-- Use `--gz-path` to control where the `.gz` is saved/read.
-- Use `--overwrite` to rebuild Parquet if it exists.
- - Deduplication:
-   - `--drop-duplicates-in-chunks` removes duplicates within each CSV chunk before writing.
-   - `--final-dedupe` loads the written Parquet and drops duplicates globally (slower, more thorough).
-   - `--dedupe-subset col1,col2` to define duplicates by subset of columns (default: all columns).
-   - `--deduped-parquet path.parquet` to write the deduped output to a separate file.
 
 
 ## Pipeline steps
