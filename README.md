@@ -1,4 +1,5 @@
-# Causal Uplift Modeling: Measuring Marketing Campaign ROI (Criteo Dataset)
+# Causal Uplift Modeling
+### Measuring Marketing Campaign ROI (Criteo Dataset)
 
 ## Overview
 
